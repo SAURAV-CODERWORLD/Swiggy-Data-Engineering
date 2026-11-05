@@ -1,0 +1,282 @@
+USE SCHEMA SANDBOX.CONSUMPTION_SCH;
+
+
+-- ============================================================
+-- CHECK ORDER ITEM FACT
+-- ============================================================
+
+SELECT *
+FROM CONSUMPTION_SCH.ORDER_ITEM_FACT
+LIMIT 100;
+
+
+-- ============================================================
+-- 1. YEARLY REVENUE KPIs
+-- ============================================================
+
+CREATE OR REPLACE VIEW CONSUMPTION_SCH.VW_YEARLY_REVENUE_KPIS AS
+
+SELECT
+    d.YEAR AS YEAR,
+
+    SUM(fact.SUBTOTAL) AS TOTAL_REVENUE,
+
+    COUNT(DISTINCT fact.ORDER_ID) AS TOTAL_ORDERS,
+
+    ROUND(
+        SUM(fact.SUBTOTAL)
+        / NULLIF(COUNT(DISTINCT fact.ORDER_ID), 0),
+        2
+    ) AS AVG_REVENUE_PER_ORDER,
+
+    ROUND(
+        SUM(fact.SUBTOTAL)
+        / NULLIF(COUNT(DISTINCT fact.ORDER_ITEM_ID), 0),
+        2
+    ) AS AVG_REVENUE_PER_ITEM,
+
+    MAX(fact.SUBTOTAL) AS MAX_ITEM_VALUE
+
+FROM CONSUMPTION_SCH.ORDER_ITEM_FACT AS fact
+
+INNER JOIN CONSUMPTION_SCH.DATE_DIM AS d
+    ON fact.ORDER_DATE_DIM_KEY = d.DATE_DIM_HK
+
+WHERE fact.DELIVERY_STATUS = 'Delivered'
+
+GROUP BY
+    d.YEAR;
+
+
+-- ============================================================
+-- 2. MONTHLY REVENUE KPIs
+-- ============================================================
+
+CREATE OR REPLACE VIEW CONSUMPTION_SCH.VW_MONTHLY_REVENUE_KPIS AS
+
+SELECT
+    d.YEAR AS YEAR,
+
+    d.MONTH AS MONTH,
+
+    SUM(fact.SUBTOTAL) AS TOTAL_REVENUE,
+
+    COUNT(DISTINCT fact.ORDER_ID) AS TOTAL_ORDERS,
+
+    ROUND(
+        SUM(fact.SUBTOTAL)
+        / NULLIF(COUNT(DISTINCT fact.ORDER_ID), 0),
+        2
+    ) AS AVG_REVENUE_PER_ORDER,
+
+    ROUND(
+        SUM(fact.SUBTOTAL)
+        / NULLIF(COUNT(DISTINCT fact.ORDER_ITEM_ID), 0),
+        2
+    ) AS AVG_REVENUE_PER_ITEM,
+
+    MAX(fact.SUBTOTAL) AS MAX_ITEM_VALUE
+
+FROM CONSUMPTION_SCH.ORDER_ITEM_FACT AS fact
+
+INNER JOIN CONSUMPTION_SCH.DATE_DIM AS d
+    ON fact.ORDER_DATE_DIM_KEY = d.DATE_DIM_HK
+
+WHERE fact.DELIVERY_STATUS = 'Delivered'
+
+GROUP BY
+    d.YEAR,
+    d.MONTH;
+
+
+-- ============================================================
+-- 3. DAILY REVENUE KPIs
+-- ============================================================
+
+CREATE OR REPLACE VIEW CONSUMPTION_SCH.VW_DAILY_REVENUE_KPIS AS
+
+SELECT
+    d.YEAR AS YEAR,
+
+    d.MONTH AS MONTH,
+
+    d.DAY_OF_THE_MONTH AS DAY,
+
+    SUM(fact.SUBTOTAL) AS TOTAL_REVENUE,
+
+    COUNT(DISTINCT fact.ORDER_ID) AS TOTAL_ORDERS,
+
+    ROUND(
+        SUM(fact.SUBTOTAL)
+        / NULLIF(COUNT(DISTINCT fact.ORDER_ID), 0),
+        2
+    ) AS AVG_REVENUE_PER_ORDER,
+
+    ROUND(
+        SUM(fact.SUBTOTAL)
+        / NULLIF(COUNT(DISTINCT fact.ORDER_ITEM_ID), 0),
+        2
+    ) AS AVG_REVENUE_PER_ITEM,
+
+    MAX(fact.SUBTOTAL) AS MAX_ITEM_VALUE
+
+FROM CONSUMPTION_SCH.ORDER_ITEM_FACT AS fact
+
+INNER JOIN CONSUMPTION_SCH.DATE_DIM AS d
+    ON fact.ORDER_DATE_DIM_KEY = d.DATE_DIM_HK
+
+WHERE fact.DELIVERY_STATUS = 'Delivered'
+
+GROUP BY
+    d.YEAR,
+    d.MONTH,
+    d.DAY_OF_THE_MONTH;
+
+
+-- ============================================================
+-- 4. REVENUE BY DAY OF WEEK
+-- ============================================================
+
+CREATE OR REPLACE VIEW CONSUMPTION_SCH.VW_DAY_REVENUE_KPIS AS
+
+SELECT
+    d.YEAR AS YEAR,
+
+    d.MONTH AS MONTH,
+
+    d.DAY_NAME AS DAY_NAME,
+
+    SUM(fact.SUBTOTAL) AS TOTAL_REVENUE,
+
+    COUNT(DISTINCT fact.ORDER_ID) AS TOTAL_ORDERS,
+
+    ROUND(
+        SUM(fact.SUBTOTAL)
+        / NULLIF(COUNT(DISTINCT fact.ORDER_ID), 0),
+        2
+    ) AS AVG_REVENUE_PER_ORDER,
+
+    ROUND(
+        SUM(fact.SUBTOTAL)
+        / NULLIF(COUNT(DISTINCT fact.ORDER_ITEM_ID), 0),
+        2
+    ) AS AVG_REVENUE_PER_ITEM,
+
+    MAX(fact.SUBTOTAL) AS MAX_ITEM_VALUE
+
+FROM CONSUMPTION_SCH.ORDER_ITEM_FACT AS fact
+
+INNER JOIN CONSUMPTION_SCH.DATE_DIM AS d
+    ON fact.ORDER_DATE_DIM_KEY = d.DATE_DIM_HK
+
+WHERE fact.DELIVERY_STATUS = 'Delivered'
+
+GROUP BY
+    d.YEAR,
+    d.MONTH,
+    d.DAY_NAME;
+
+
+-- ============================================================
+-- 5. MONTHLY REVENUE BY RESTAURANT
+-- ============================================================
+
+CREATE OR REPLACE VIEW CONSUMPTION_SCH.VW_MONTHLY_REVENUE_BY_RESTAURANT AS
+
+SELECT
+    d.YEAR AS YEAR,
+
+    d.MONTH AS MONTH,
+
+    r.RESTAURANT_ID,
+
+    r.NAME AS RESTAURANT_NAME,
+
+    SUM(fact.SUBTOTAL) AS TOTAL_REVENUE,
+
+    COUNT(DISTINCT fact.ORDER_ID) AS TOTAL_ORDERS,
+
+    ROUND(
+        SUM(fact.SUBTOTAL)
+        / NULLIF(COUNT(DISTINCT fact.ORDER_ID), 0),
+        2
+    ) AS AVG_REVENUE_PER_ORDER,
+
+    ROUND(
+        SUM(fact.SUBTOTAL)
+        / NULLIF(COUNT(DISTINCT fact.ORDER_ITEM_ID), 0),
+        2
+    ) AS AVG_REVENUE_PER_ITEM,
+
+    MAX(fact.SUBTOTAL) AS MAX_ITEM_VALUE
+
+FROM CONSUMPTION_SCH.ORDER_ITEM_FACT AS fact
+
+INNER JOIN CONSUMPTION_SCH.DATE_DIM AS d
+    ON fact.ORDER_DATE_DIM_KEY = d.DATE_DIM_HK
+
+INNER JOIN CONSUMPTION_SCH.RESTAURANT_DIM AS r
+    ON fact.RESTAURANT_DIM_KEY = r.RESTAURANT_HK
+   AND r.IS_CURRENT = TRUE
+
+WHERE fact.DELIVERY_STATUS = 'Delivered'
+
+GROUP BY
+    d.YEAR,
+    d.MONTH,
+    r.RESTAURANT_ID,
+    r.NAME;
+
+
+-- ============================================================
+-- 6. VALIDATE KPI VIEWS
+-- ============================================================
+
+SELECT *
+FROM CONSUMPTION_SCH.VW_YEARLY_REVENUE_KPIS
+ORDER BY YEAR;
+
+
+SELECT *
+FROM CONSUMPTION_SCH.VW_MONTHLY_REVENUE_KPIS
+ORDER BY YEAR, MONTH;
+
+
+SELECT *
+FROM CONSUMPTION_SCH.VW_DAILY_REVENUE_KPIS
+ORDER BY YEAR, MONTH, DAY;
+
+
+SELECT *
+FROM CONSUMPTION_SCH.VW_DAY_REVENUE_KPIS
+ORDER BY YEAR, MONTH, DAY_NAME;
+
+
+SELECT *
+FROM CONSUMPTION_SCH.VW_MONTHLY_REVENUE_BY_RESTAURANT
+ORDER BY YEAR, MONTH, TOTAL_REVENUE DESC;
+
+
+-- ============================================================
+-- 7. SOURCE DATA VALIDATION
+-- ============================================================
+
+SELECT
+    YEAR(ORDER_DATE) AS YEAR,
+    COUNT(*) AS CNT
+FROM SANDBOX.CLEAN_SCH.ORDERS
+GROUP BY YEAR(ORDER_DATE)
+ORDER BY YEAR;
+
+
+-- Validate years actually present in the FACT table
+
+SELECT
+    d.YEAR,
+    COUNT(*) AS FACT_RECORDS,
+    COUNT(DISTINCT f.ORDER_ID) AS UNIQUE_ORDERS
+FROM SANDBOX.CONSUMPTION_SCH.ORDER_ITEM_FACT AS fSANDBOX.CONSUMPTION_SCH.VW_DAILY_REVENUE_KPISSANDBOX.CONSUMPTION_SCH.VW_DAILY_REVENUE_KPIS
+INNER JOIN SANDBOX.CONSUMPTION_SCH.DATE_DIM AS d
+    ON f.ORDER_DATE_DIM_KEY = d.DATE_DIM_HK
+GROUP BY d.YEAR
+ORDER BY d.YEAR;
